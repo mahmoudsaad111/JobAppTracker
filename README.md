@@ -109,10 +109,34 @@ backend/
 ---
 
 ## 📸 Screenshots
-![Dashboard](screenshots/dashboard.png)
+
+### 🔐 Authentication
+| Login | Register | Forgot Password |
+|-------|----------|-----------------|
+| ![Login](screenshots/Login.png) | ![Register](screenshots/Register.png) | ![Forgot Password](screenshots/EmailConfirm.png) |
 
 ---
 
+### 🏠 Dashboard
+| Overview | Statistics |
+|----------|------------|
+| ![Dashboard](screenshots/Dashboard.png) | ![Stats](screenshots/Dashboard2.png) |
+
+---
+
+### 📄 Applications & Interviews
+| Applications List | Application Detail | Interviews |
+|-------------------|--------------------|------------|
+| ![Applications](screenshots/JobApplications.png) | ![Add Job](screenshots/JobApplication.png) | ![Interviews](screenshots/Interviews.png) |
+
+---
+
+### 📝 Notes & Documents
+| Notes | Documents | Profile |
+|-------|-----------|---------|
+| ![Notes](screenshots/Notes.png) | ![Documents](screenshots/Documents.png) | ![Profile](screenshots/Profile.png) |
+
+---
 
 ## 🚀 Getting Started
 
