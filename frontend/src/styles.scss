@@ -1,0 +1,191 @@
+@use '@angular/material' as mat;
+
+// ─── Custom Theme ──────────────────────────────────────────────────────────────
+$primary-palette: mat.define-palette(mat.$indigo-palette, 600, 400, 800);
+$accent-palette:  mat.define-palette(mat.$teal-palette, A400, A200, A700);
+$warn-palette:    mat.define-palette(mat.$red-palette);
+
+$theme: mat.define-light-theme((
+  color: (
+    primary: $primary-palette,
+    accent:  $accent-palette,
+    warn:    $warn-palette
+  ),
+  typography: mat.define-typography-config(
+    $font-family: 'Inter, sans-serif'
+  ),
+  density: 0
+));
+
+@include mat.all-component-themes($theme);
+
+// ─── CSS Variables ─────────────────────────────────────────────────────────────
+:root {
+  --primary:        #3949ab;
+  --primary-light:  #6f74dd;
+  --primary-dark:   #00227b;
+  --accent:         #1de9b6;
+  --warn:           #f44336;
+  --bg-app:         #f4f6fb;
+  --bg-card:        #ffffff;
+  --bg-sidebar:     #1a1f3a;
+  --text-primary:   #1a1f3a;
+  --text-secondary: #6b7280;
+  --border:         #e5e7eb;
+  --shadow-sm:      0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:      0 4px 16px rgba(0,0,0,.10);
+  --radius:         12px;
+  --radius-sm:      8px;
+}
+
+// ─── Reset & Base ──────────────────────────────────────────────────────────────
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+// ─── Layout ────────────────────────────────────────────────────────────────────
+.page-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+}
+
+// ─── Cards ─────────────────────────────────────────────────────────────────────
+.app-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  transition: box-shadow .2s ease;
+
+  &:hover { box-shadow: var(--shadow-md); }
+}
+
+// ─── Stat Cards ────────────────────────────────────────────────────────────────
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  @extend .app-card;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  .stat-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    mat-icon { font-size: 24px; width: 24px; height: 24px; }
+  }
+
+  .stat-info { flex: 1; }
+  .stat-value { font-size: 1.75rem; font-weight: 700; line-height: 1; }
+  .stat-label { font-size: .78rem; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; letter-spacing: .05em; }
+
+  &.total   .stat-icon { background: #e8eaf6; color: var(--primary); }
+  &.applied .stat-icon { background: #e3f2fd; color: #1976d2; }
+  &.interview .stat-icon { background: #fff8e1; color: #f57f17; }
+  &.offer   .stat-icon { background: #e8f5e9; color: #388e3c; }
+  &.rejected .stat-icon { background: #fce4ec; color: #c62828; }
+}
+
+// ─── Status Chips ──────────────────────────────────────────────────────────────
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  white-space: nowrap;
+
+  &.saved      { background: #f3f4f6; color: #374151; }
+  &.applied    { background: #dbeafe; color: #1e40af; }
+  &.interview  { background: #fef3c7; color: #92400e; }
+  &.offer      { background: #d1fae5; color: #065f46; }
+  &.rejected   { background: #fee2e2; color: #991b1b; }
+}
+
+// ─── Tables ────────────────────────────────────────────────────────────────────
+.mat-mdc-table {
+  width: 100%;
+  border-radius: var(--radius) !important;
+  overflow: hidden;
+  box-shadow: none !important;
+  border: 1px solid var(--border);
+}
+
+.mat-mdc-header-row {
+  background: #f8f9fc !important;
+  .mat-mdc-header-cell {
+    font-weight: 600;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-secondary);
+  }
+}
+
+.mat-mdc-row {
+  transition: background .15s;
+  &:hover { background: #f8f9fc; }
+}
+
+// ─── Forms ─────────────────────────────────────────────────────────────────────
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+
+  .full-width { grid-column: 1 / -1; }
+}
+
+// ─── Misc utilities ────────────────────────────────────────────────────────────
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-8  { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.mt-16  { margin-top: 16px; }
+.mb-16  { margin-bottom: 16px; }
+.text-muted { color: var(--text-secondary); }
+.w-full { width: 100%; }
+
+// ─── Scrollbar ─────────────────────────────────────────────────────────────────
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }

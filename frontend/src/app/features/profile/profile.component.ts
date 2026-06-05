@@ -1,0 +1,370 @@
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { MatButtonModule }          from '@angular/material/button';
+import { MatIconModule }            from '@angular/material/icon';
+import { MatFormFieldModule }       from '@angular/material/form-field';
+import { MatInputModule }           from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule }         from '@angular/material/tooltip';
+import { AuthService }              from '../../core/services/auth.service';
+import { NotificationService }      from '../../core/services/notification.service';
+import { NotesService, NoteDto }    from '../../core/services/notes.service';
+import { DocumentsService, DocumentDto } from '../../core/services/document.service';
+
+@Component({
+  selector: 'app-profile',
+  standalone: true,
+  imports: [
+    FormsModule, CommonModule, ReactiveFormsModule,
+    MatButtonModule, MatIconModule, MatFormFieldModule,
+    MatInputModule, MatProgressSpinnerModule, MatTooltipModule,
+  ],
+  template: `
+    <div class="page-container">
+      <div class="page-header"><h1>Profile</h1></div>
+
+      <div class="profile-grid">
+
+        <!-- ── Left column: avatar ── -->
+        <div class="app-card avatar-card">
+          <div class="big-avatar">{{ initials }}</div>
+          <div class="user-name">{{ auth.userName() }}</div>
+          <div class="user-email">{{ auth.userEmail() }}</div>
+          <button mat-stroked-button color="warn" (click)="auth.logout()">
+            <mat-icon>logout</mat-icon> Logout
+          </button>
+        </div>
+
+        <!-- ── Right column ── -->
+        <div class="right-col">
+
+          <!-- Account Details -->
+          <div class="app-card form-card">
+            <h3>Account Details</h3>
+            <form [formGroup]="form" (ngSubmit)="save()">
+              <div class="field-col">
+                <mat-form-field appearance="outline">
+                  <mat-label>Full Name</mat-label>
+                  <input matInput formControlName="name">
+                  <mat-icon matPrefix>person</mat-icon>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Email</mat-label>
+                  <input matInput type="email" formControlName="email">
+                  <mat-icon matPrefix>email</mat-icon>
+                </mat-form-field>
+              </div>
+              <div class="form-actions">
+                <button mat-flat-button color="primary" type="submit" [disabled]="saving">
+                  @if (saving) { <mat-spinner diameter="18"/> } @else { Save Changes }
+                </button>
+              </div>
+            </form>
+
+            <hr class="divider">
+
+            <h3>Change Password</h3>
+            <form [formGroup]="pwForm" (ngSubmit)="changePassword()">
+              <div class="field-col">
+                <mat-form-field appearance="outline">
+                  <mat-label>Current Password</mat-label>
+                  <input matInput type="password" formControlName="current">
+                  <mat-icon matPrefix>lock</mat-icon>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>New Password</mat-label>
+                  <input matInput type="password" formControlName="next">
+                  <mat-icon matPrefix>lock_outline</mat-icon>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Confirm New Password</mat-label>
+                  <input matInput type="password" formControlName="confirm">
+                  <mat-icon matPrefix>lock_reset</mat-icon>
+                </mat-form-field>
+              </div>
+              <div class="form-actions">
+                <button mat-flat-button color="primary" type="submit" [disabled]="savingPw">
+                  @if (savingPw) { <mat-spinner diameter="18"/> } @else { Update Password }
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- ── Notes navigation card ── -->
+          <div class="app-card section-card">
+            <div class="section-header">
+              <div class="section-title">
+                <mat-icon>sticky_note_2</mat-icon>
+                <h3>My Notes</h3>
+                @if (noteCount > 0) {
+                  <span class="badge badge--notes">{{ noteCount }}</span>
+                }
+              </div>
+              <button mat-flat-button color="primary" (click)="goToNotes()">
+                <mat-icon>open_in_new</mat-icon> Open Notes
+              </button>
+            </div>
+
+            @if (loadingNoteCount) {
+              <div class="loading-row"><mat-spinner diameter="28"/></div>
+            } @else {
+              <div class="nav-body" (click)="goToNotes()">
+                <div class="nav-icon nav-icon--notes">
+                  <mat-icon>edit_note</mat-icon>
+                </div>
+                <div class="nav-text">
+                  @if (noteCount === 0) {
+                    <p class="nav-headline">No notes yet</p>
+                    <p class="nav-sub">Head to the notes editor to start writing.</p>
+                  } @else {
+                    <p class="nav-headline">{{ noteCount }} note{{ noteCount === 1 ? '' : 's' }}</p>
+                    <p class="nav-sub">Open the notes editor to read, write and organise your notes.</p>
+                  }
+                </div>
+                <div class="nav-arrow">
+                  <mat-icon>arrow_forward</mat-icon>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- ── Documents navigation card ── -->
+          <div class="app-card section-card">
+            <div class="section-header">
+              <div class="section-title">
+                <mat-icon>folder_open</mat-icon>
+                <h3>My Documents</h3>
+                @if (docCount > 0) {
+                  <span class="badge badge--docs">{{ docCount }}</span>
+                }
+              </div>
+              <button mat-flat-button color="primary" (click)="goToDocuments()">
+                <mat-icon>open_in_new</mat-icon> Open Documents
+              </button>
+            </div>
+
+            @if (loadingDocCount) {
+              <div class="loading-row"><mat-spinner diameter="28"/></div>
+            } @else {
+              <div class="nav-body" (click)="goToDocuments()">
+                <div class="nav-icon nav-icon--docs">
+                  <mat-icon>description</mat-icon>
+                </div>
+                <div class="nav-text">
+                  @if (docCount === 0) {
+                    <p class="nav-headline">No documents yet</p>
+                    <p class="nav-sub">Upload your CV, resume, or cover letter.</p>
+                  } @else {
+                    <p class="nav-headline">{{ docCount }} document{{ docCount === 1 ? '' : 's' }}</p>
+                    <p class="nav-sub">View, download, and manage your uploaded documents.</p>
+                  }
+                </div>
+                <div class="nav-arrow">
+                  <mat-icon>arrow_forward</mat-icon>
+                </div>
+              </div>
+            }
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .profile-grid {
+      display: grid; grid-template-columns: 260px 1fr;
+      gap: 16px; align-items: start;
+      @media (max-width: 768px) { grid-template-columns: 1fr; }
+    }
+
+    /* Avatar card */
+    .avatar-card {
+      padding: 32px 20px; display: flex; flex-direction: column;
+      align-items: center; gap: 8px; text-align: center; position: sticky; top: 80px;
+    }
+    .big-avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-light), var(--primary));
+      color: white; font-size: 2rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
+    }
+    .user-name  { font-weight: 700; font-size: 1.1rem; }
+    .user-email { color: var(--text-secondary); font-size: .875rem; margin-bottom: 12px; }
+
+    /* Right column */
+    .right-col  { display: flex; flex-direction: column; gap: 16px; }
+    .form-card  { padding: 24px; h3 { font-weight: 600; margin: 0 0 4px; } }
+    .field-col  { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+    .form-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+    .divider    { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+    /* Section cards */
+    .section-card { padding: 20px; }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .section-title {
+      display: flex; align-items: center; gap: 8px;
+      h3 { font-weight: 600; font-size: 1rem; margin: 0; }
+      mat-icon { font-size: 20px; width: 20px; height: 20px; color: var(--primary, #6366f1); }
+    }
+
+    /* Badges */
+    .badge {
+      font-size: .72rem; font-weight: 700;
+      padding: 1px 7px; border-radius: 10px;
+    }
+    .badge--notes { background: #ede9fe; color: #6d28d9; }
+    .badge--docs  { background: #dbeafe; color: #2563eb; }
+
+    /* Shared nav body (used by both Notes and Documents) */
+    .nav-body {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--surface-2, #f8fafc);
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 12px; padding: 16px 20px;
+      cursor: pointer; transition: box-shadow .15s, border-color .2s;
+      &:hover {
+        box-shadow: 0 2px 12px rgba(0,0,0,.08);
+        border-color: color-mix(in srgb, var(--primary,#6366f1) 30%, transparent);
+      }
+    }
+
+    .nav-icon {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      mat-icon { font-size: 22px; width: 22px; height: 22px; }
+    }
+    .nav-icon--notes {
+      background: color-mix(in srgb, #6366f1 10%, transparent);
+      mat-icon { color: #6366f1; }
+    }
+    .nav-icon--docs {
+      background: color-mix(in srgb, #2563eb 10%, transparent);
+      mat-icon { color: #2563eb; }
+    }
+
+    .nav-text { flex: 1; min-width: 0; }
+    .nav-headline {
+      font-size: .9rem; font-weight: 700; color: var(--text-primary); margin: 0 0 2px;
+    }
+    .nav-sub {
+      font-size: .78rem; color: var(--text-secondary); margin: 0;
+    }
+
+    .nav-arrow {
+      flex-shrink: 0; color: var(--text-secondary);
+      display: flex; align-items: center;
+      mat-icon { font-size: 20px; transition: transform .2s, color .2s; }
+    }
+    .nav-body:hover .nav-arrow mat-icon {
+      transform: translateX(4px);
+      color: var(--primary, #6366f1);
+    }
+
+    /* States */
+    .loading-row { display: flex; justify-content: center; padding: 32px; }
+  `]
+})
+export class ProfileComponent implements OnInit {
+  auth     = inject(AuthService);
+  notify   = inject(NotificationService);
+  fb       = inject(FormBuilder);
+  notesSvc = inject(NotesService);
+  docsSvc  = inject(DocumentsService);
+  private router = inject(Router);
+
+  saving   = false;
+  savingPw = false;
+
+  form = this.fb.nonNullable.group({
+    name:  ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+  });
+  pwForm = this.fb.nonNullable.group({
+    current: ['', Validators.required],
+    next:    ['', [Validators.required, Validators.minLength(8)]],
+    confirm: ['', Validators.required],
+  });
+
+  // Notes
+  noteCount        = 0;
+  loadingNoteCount = false;
+
+  // Documents — count only, no inline management
+  docCount        = 0;
+  loadingDocCount = false;
+
+  get initials(): string {
+    const n = this.auth.userName();
+    return n ? n.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2) : '?';
+  }
+
+  ngOnInit(): void {
+    this.form.patchValue({ name: this.auth.userName(), email: this.auth.userEmail() });
+    this.loadNoteCount();
+    this.loadDocCount();
+  }
+
+  // ── Account ───────────────────────────────────────────────────────────────
+  save(): void { this.notify.info('Profile update coming soon.'); }
+
+  changePassword(): void {
+    if (this.pwForm.invalid) { this.pwForm.markAllAsTouched(); return; }
+    const { current, next, confirm } = this.pwForm.getRawValue();
+    if (next !== confirm) { this.notify.error('Passwords do not match.'); return; }
+    this.savingPw = true;
+    this.auth.changePassword({ currentPassword: current, newPassword: next }).subscribe({
+      next: () => {
+        this.notify.success('Password changed.');
+        this.pwForm.reset();
+        this.savingPw = false;
+      },
+      error: () => { this.savingPw = false; },
+    });
+  }
+
+  // ── Notes ─────────────────────────────────────────────────────────────────
+  private loadNoteCount(): void {
+    this.loadingNoteCount = true;
+    this.notesSvc.getAll().subscribe({
+      next: res => {
+        const raw = res as any;
+        const list: NoteDto[] =
+          Array.isArray(raw?.data?.notes) ? raw.data.notes
+        : Array.isArray(raw?.data)        ? raw.data
+        : Array.isArray(raw?.notes)       ? raw.notes
+        : Array.isArray(raw)              ? raw
+        : [];
+        this.noteCount        = list.length;
+        this.loadingNoteCount = false;
+      },
+      error: () => { this.loadingNoteCount = false; },
+    });
+  }
+
+  goToNotes(): void { this.router.navigate(['/notes']); }
+
+  // ── Documents ─────────────────────────────────────────────────────────────
+  private loadDocCount(): void {
+    this.loadingDocCount = true;
+    this.docsSvc.getAll().subscribe({
+      next: res => {
+        const raw = res as any;
+        const list: DocumentDto[] =
+          Array.isArray(raw?.data?.documents) ? raw.data.documents
+        : Array.isArray(raw?.data)            ? raw.data
+        : Array.isArray(raw)                  ? raw
+        : [];
+        this.docCount        = list.length;
+        this.loadingDocCount = false;
+      },
+      error: () => { this.loadingDocCount = false; },
+    });
+  }
+
+  goToDocuments(): void { this.router.navigate(['/documents']); }
+}
