@@ -39,6 +39,7 @@ builder.Services.AddCors(options =>
     );
 });
 
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -48,14 +49,38 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseStaticFiles(); // to serve uploaded files from wwwroot
-app.UseRouting();
-app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseCors("AngularPolicy");
+app.UseRouting();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+
+    // ADD THIS ↓
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+    
+    string[] roles = ["User", "Admin"];
+    
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole<Guid>(role));
+            Console.WriteLine($"ROLE CREATED: {role}");
+        }
+    }
+}
+
 
 app.Run();

@@ -1,5 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://localhost:44315/api',
+  apiUrl: 'http://localhost:8080/api',
+  publicUrl: 'http://localhost:8080',
   appName: 'JobTracker'
 };

@@ -321,7 +321,7 @@ export class DocumentsComponent implements OnInit {
 
   fileUrl(filePath: string): string {
     // Strip /api (or /api/v1 etc.) from apiUrl to get the server origin
-    const origin = environment.apiUrl.replace(/\/api.*$/i, '');
+    const origin = environment.publicUrl.replace(/\/api.*$/i, '');
     if (filePath.startsWith('http')) return filePath;           // already absolute
     if (filePath.startsWith('/uploads/')) return `${origin}${filePath}`;
     return `${origin}/uploads/documents/${filePath}`;
@@ -349,13 +349,10 @@ export class DocumentsComponent implements OnInit {
 
     this.docsSvc.upload(file, this.pendingDocType).subscribe({
       next: res => {
-        const raw  = res as any;
-        // handle both { data: DocumentDto } and bare DocumentDto
-        const saved: DocumentDto = raw?.data ?? raw;
-        this.documents.update(list => [saved, ...list]);
         this.notify.success('Document uploaded.');
         this.cancelUpload();
         this.uploadingDoc.set(false);
+        this.loadDocuments();  // ← replace everything else with this
       },
       error: (err) => {
         console.error('[Documents] upload failed:', err.status, err.error);

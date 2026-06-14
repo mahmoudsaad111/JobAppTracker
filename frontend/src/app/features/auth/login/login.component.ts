@@ -49,7 +49,7 @@ import { NotificationService } from '../../../core/services/notification.service
           }
         </mat-form-field>
         <div class="forgot-row">
-          <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+<a routerLink="/auth/forgot-password" class="forgot-link">Forgot password?</a>
         </div>
 
         @if (errorMessage) {

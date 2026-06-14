@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://your-api.azurewebsites.net/api',
+  apiUrl: '/api',
+  publicUrl: 'http://localhost:8080',
   appName: 'JobTracker'
 };

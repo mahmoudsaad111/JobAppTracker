@@ -50,7 +50,7 @@ namespace JobAppTracker.Application.Features.Authentication.Handlers
             };
 
             // 3. Save to DB
-            var result = await _usermanager.CreateAsync(user, request.Password);
+           var result = await _usermanager.CreateAsync(user, request.Password);
 
             if (!result.Succeeded)
             {
@@ -64,15 +64,24 @@ namespace JobAppTracker.Application.Features.Authentication.Handlers
             await _usermanager.AddToRoleAsync(user, "User");
 
             // 4. Generate email confirmation token and send email
+         
+
+        try{
             var token = await _usermanager.GenerateEmailConfirmationTokenAsync(user);
             var encodedToken = WebUtility.UrlEncode(token);
             var link = _frontendUrlService.EmailConfirmation(user.Id.ToString(), encodedToken);
-
             await _emailService.SendEmailAsync(
                 user.Email,
                 "Verify your email",
                 $"Click here: <a href='{link}'>Verify Email</a>"
             );
+        }
+            catch (Exception ex)
+        {
+          Console.WriteLine($"EMAIL ERROR: {ex.Message}");
+          Console.WriteLine($"EMAIL INNER: {ex.InnerException?.Message}");
+            throw;
+        }
 
             // 5. Return result
             return new RegisterResultDto { Email = user.Email };

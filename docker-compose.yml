@@ -1,0 +1,60 @@
+version: '3.8'
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - web
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      mssql:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__SQLServer=Server=mssql,1433;Database=JobAppTracker;User Id=sa;Password=MahmoudSaad@123;TrustServerCertificate=True
+      # ── Email ──────────────────────────────────────────────
+      - Email__SmtpServer=smtp.gmail.com
+      - Email__Port=587
+      - Email__SenderName=JobAppTracker
+      - Email__SenderEmail=mahmoudsaad87871@gmail.com
+      - Email__Password=eaxk zlcn xiqd yjmx
+      # ── Frontend ───────────────────────────────────────────
+      - Frontend__BaseUrl=http://localhost:4200
+    volumes:
+      - uploads-data:/app/wwwroot/uploads 
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql-server
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=MahmoudSaad@123
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    deploy:
+      resources:
+        limits:
+          memory: 2gb      
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "MahmoudSaad@123", "-Q", "SELECT 1", "-No"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+volumes:
+  mssql-data:
+  uploads-data:
